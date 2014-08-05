@@ -1,9 +1,10 @@
 
 import os
 import json
-import zlib
 import datetime
 import logging
+from hashlib import md5
+from prettytable import PrettyTable
 
 
 class Snapshot:
@@ -13,12 +14,14 @@ class Snapshot:
         self.file = file
         self.snapshot_dict = {}
         self.logger = logging.getLogger()
+        
+        self.logger.info("Initializing snapshot.")
 
         try:
             with open("{}.snap".format(self.file), 'r') as db:
                 self.snapshot_dict = json.load(fp=db)
         except IOError:
-            self.logger.info("Initial snapshot.")
+            self.logger.info("Creating 1st snapshot.")
             self.rev_cnt = 0
         else:
             self.logger.info("Found existing snapshot.")            
@@ -26,33 +29,42 @@ class Snapshot:
 
         # build version index
         self.version_indx = {}
-        for (a32c, snapshot) in self.snapshot_dict.iteritems():
-            self.version_indx[snapshot['VERSION']] = a32c
+        for (chksum, snapshot) in self.snapshot_dict.iteritems():
+            self.version_indx[snapshot['VERSION']] = chksum
 
     def create(self):
-
-        self.logger.info("Creating snapshot.")            
 
         with open(self.file, 'r') as rfile:
             content = rfile.readlines()
 
-        a32chksum = zlib.adler32(''.join(content))
+        # Get content checksum
+        chksum = self._get_checksum(content)
 
-        new_rev = self.rev_cnt + 1
+        # If change since last snapshot
+        if chksum not in self.snapshot_dict.keys():
 
-        self.snapshot_dict[a32chksum] = {
-                'VERSION' : new_rev,
+            self.logger.info("Creating snapshot.")            
+            
+            self.rev_cnt = self.rev_cnt + 1
+            
+            self.snapshot_dict[chksum] = {
+                'VERSION' : str(self.rev_cnt),
                 'DATE-TIME' : str(datetime.datetime.now()),
                 'CONTENT' : content
-        }
+            }
 
-        with open(self.file + '.snap', 'w') as db:
-            json.dump(self.snapshot_dict, db)
+            with open(self.file + '.snap', 'w') as db:
+                json.dump(self.snapshot_dict, db)
 
-        self.logger.info("Snapshot [r{}:{}] Created succesfully.".format(new_rev, a32chksum))  
+            self.logger.info("Snapshot [r{}:{}] Created succesfully.".format(new_rev, chksum))  
 
+        else:
+            self.logger.info("Snapshot up to date.")  
 
     def restore(self, version):
+
+        if not version:
+            version = self.rev_cnt
 
         self.logger.info("Checking snapshot.")     
 
@@ -71,6 +83,27 @@ class Snapshot:
 
         else:
             self.logger.info("Could not find requested version.")
+
+    def tabulate(self):
+
+        table = PrettyTable(['Rev', 'Datetime', 'Checksum'])
+
+        l = self.version_indx.keys()
+        l.sort()
+
+        for rev in l:
+
+            chksum = self.version_indx[rev]
+            snapshot = self.snapshot_dict[chksum]
+            datetime = snapshot['DATE-TIME']
+
+            table.add_row([rev, datetime, chksum])
+
+        return "\n{}".format(table)
+
+    def _get_checksum(self, content):
+
+        return md5(''.join(content)).hexdigest()
 
 
 

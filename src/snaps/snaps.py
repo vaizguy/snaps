@@ -18,18 +18,21 @@ class Snappy:
         s = Snapshot(file)
         s.create()
 
-    def restore_snapshot(self, file, version):
+    def restore_snapshot(self, file, version=None):
 
         if not file:
             self.logger.info("Please enter a valid filename.")
             return None
 
-        if not version:
-            self.logger.info("Please enter a valid version.")
-            return None
-
         s = Snapshot(file)
         s.restore(version)
+
+    def tabulate_snapshots(self, file):
+
+        s = Snapshot(file)
+
+        self.logger.info("Snapshot Info, File: {}".format(file))
+        self.logger.info(s.tabulate())
 
 
 if __name__ == '__main__':
@@ -58,17 +61,22 @@ if __name__ == '__main__':
     parser.add_argument("--snap", help="Create snapshot of file.", action="store_true")
     # Get snapshot
     parser.add_argument("--restore", help="Get file snapshot of given version.", action="store_true")
+    # Tabulate
+    parser.add_argument("--info", help="Get stored snapshot information.", action="store_true")
 
     args = parser.parse_args()
 
     # Initialize tool
     S = Snappy()
 
+    # ACTIONS
     if args.snap:
         S.create_snapshot(args.file)
 
-    elif args.restore:
-        args.rev = int(args.rev)
+    if args.restore:
         S.restore_snapshot(args.file, args.rev)
+
+    if args.info:
+        S.tabulate_snapshots(args.file)
 
 
