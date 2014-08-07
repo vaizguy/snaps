@@ -3,7 +3,7 @@
 from snapshot import Snapshot
 
 
-class Snappy:
+class Snaps:
 
     def __init__(self):
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Initialize tool
-    S = Snappy()
+    S = Snaps()
 
     # ACTIONS
     if args.snap:
