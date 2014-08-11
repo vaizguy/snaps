@@ -3,8 +3,6 @@ from difflib import ndiff, restore
 
 class DiffContent:
 
-    def __init__(self):pass
-
     @classmethod
     def get_diff(cls, c_o, c_n):
 

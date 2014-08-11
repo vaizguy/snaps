@@ -14,13 +14,15 @@ class Snapshot:
     def __init__(self, file):
 
         self.file = file
+        self.path, self.file_name = os.path.split(file)
+        self.snapshot_path = os.path.join(self.path, ".{}.snapjson".format(self.file_name)) 
         self.snapshot_dict = {}
         self.logger = logging.getLogger()
         
         self.logger.info("Initializing snapshot.")
 
         try:
-            with open("{}.snap".format(self.file), 'r') as db:
+            with open(self.snapshot_path, 'r') as db:
                 self.snapshot_dict = json.load(fp=db)
 
         except IOError:
@@ -48,7 +50,7 @@ class Snapshot:
         else:
             snapshot_id = self.version_indx[self.rev_cnt]
 
-            last_snapshot_diff = self.snapshot_dict[snapshot_id]['CONTENT']
+            last_snapshot_diff = self.snapshot_dict[snapshot_id]['CONTENT_DIFF']
 
             last_snapshot_content = DiffContent.get_revised(last_snapshot_diff)
 
@@ -67,10 +69,10 @@ class Snapshot:
             self.snapshot_dict[chksum] = {
                 'VERSION' : str(self.rev_cnt),
                 'DATE-TIME' : str(datetime.datetime.now()),
-                'CONTENT' : list(content_diff)
+                'CONTENT_DIFF' : list(content_diff)
             }
 
-            with open(self.file + '.snap', 'w') as db:
+            with open(self.snapshot_path, 'w') as db:
                 json.dump(self.snapshot_dict, db)
 
             self.logger.info("Snapshot [r{}:{}] Created succesfully.".format(self.rev_cnt, chksum))  
@@ -93,7 +95,7 @@ class Snapshot:
 
             self.logger.info("Dumping snapshot [r{}:{}].".format(snapshot['VERSION'], snapshot['DATE-TIME']))
 
-            content_diff = snapshot['CONTENT']
+            content_diff = snapshot['CONTENT_DIFF']
 
             content = DiffContent.get_revised(content_diff)
 
@@ -111,6 +113,9 @@ class Snapshot:
 
         l = self.version_indx.keys()
         l.sort()
+
+        if not l:
+            return None
 
         for rev in l:
 

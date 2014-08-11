@@ -29,10 +29,20 @@ class Snaps:
 
     def tabulate_snapshots(self, file):
 
+        if not file:
+            self.logger.info("Please enter a valid filename.")
+            return None
+
         s = Snapshot(file)
 
-        self.logger.info("Snapshot Info, File: {}".format(file))
-        self.logger.info(s.tabulate())
+        table = s.tabulate()
+
+        if table:
+            self.logger.info("Snapshot Information for file: {}".format(file))
+            self.logger.info(s.tabulate())
+        else:
+            self.logger.info("No snapshot Information found for file: {}".format(file))
+
 
 
 if __name__ == '__main__':
