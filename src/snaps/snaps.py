@@ -49,6 +49,7 @@ if __name__ == '__main__':
 
     import argparse
     import logging
+    import sys
 
     logging_format = logging.Formatter("[%(levelname)s] %(message)s")
     mod_logger = logging.getLogger()
@@ -74,7 +75,11 @@ if __name__ == '__main__':
     # Tabulate
     parser.add_argument("--info", help="Get stored snapshot information.", action="store_true")
 
+    # Get arguments
     args = parser.parse_args()
+
+    if len(sys.argv) == 1:
+        parser.print_help()
 
     # Initialize tool
     S = Snaps()
